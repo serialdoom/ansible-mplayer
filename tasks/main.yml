@@ -1,0 +1,43 @@
+---
+# tasks file for bin/roles/mplayer
+
+  - name: apt-get stuff
+    apt:
+      name: '{{ item }}'
+      state: present
+      cache_valid_time: 36000
+      update_cache: yes
+    with_items:
+      - libasound2-dev
+      - yasm
+    become: true
+    tags:
+      - apt
+    
+  - name: wget mplayer
+    get_url:
+      url: '{{ mplayer_version_table[mplayer_version].url }}'
+      sha256sum: '{{ mplayer_version_table[mplayer_version].sha }}'
+      dest: '/tmp/{{ mplayer_version_table[mplayer_version].tarball }}'
+
+  - name: unarchive mplayer
+    unarchive:
+      src: '/tmp/{{ mplayer_version_table[mplayer_version].tarball }}'
+      dest: /tmp/
+
+  - name: configure
+    shell: ./configure --prefix={{ install_path }}
+    args:
+      chdir: '/tmp/{{ mplayer_version_table[mplayer_version].dir }}'
+      creates: ./config.mak
+  - name: make
+    shell: make -j {{ ansible_processor_vcpus * 2 }} && make install
+    args:
+      chdir: '/tmp/{{ mplayer_version_table[mplayer_version].dir }}'
+      creates: '{{ install_path }}/bin/mplayer'
+
+  - name: enable mplayer cores
+    lineinfile:
+      line: 'lavdopts=threads={{ mplayer_lavdopts_threads }}'
+      regexp: '^lavdopts=threads.*'
+      dest: ~/.mplayer/config

@@ -1,0 +1,6 @@
+---
+# defaults file for bin/roles/mplayer
+
+install_path: ~/.local
+mplayer_lavdopts_threads: '{{ ansible_processor_vcpus }}'
+mplayer_version: 1.3.0
